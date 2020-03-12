@@ -1,0 +1,46 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vault-deployment
+  labels:
+    app: vault
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: vault
+  template:
+    metadata:
+      labels:
+        app: vault
+    spec:
+      containers:
+      - name: vault
+        image: vault
+        securityContext:
+          capabilities:
+            add:
+              - IPC_LOCK
+        ports:
+        - name: vault-port
+          containerPort: 8200
+        env:
+          #- name: VAULT_LOCAL_CONFIG
+          #  value: '{"backend": {"file": {"path": "/vault/file"}}}'
+        - name: VAULT_DEV_LISTEN_ADDRESS
+          value: 0.0.0.0:8200
+        - name: VAULT_DEV_ROOT_TOKEN_ID
+          value: myroot
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: load-balancer
+spec:
+  selector:
+    app: vault
+  ports:
+    - port: 8200
+      targetPort: vault-port
+  type: LoadBalancer
